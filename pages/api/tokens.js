@@ -7,7 +7,7 @@ export default async function handler(req, res) {
         { headers: { 'X-API-Key': process.env.MORALIS_API_KEY } }
       ),
       fetch(
-        `https://deep-index.moralis.io/api/v2.2/${address}/erc20?chain=base`,
+        `https://deep-index.moralis.io/api/v2.2/${address}/erc20?chain=base&limit=50`,
         { headers: { 'X-API-Key': process.env.MORALIS_API_KEY } }
       )
     ]);
@@ -20,9 +20,12 @@ export default async function handler(req, res) {
       balance: (parseInt(native.balance) / 1e18).toFixed(6)
     };
     
-    const result = [ethBalance, ...(tokens.result || [])];
+    console.log('Moralis tokens response:', JSON.stringify(tokens));
+    
+    const result = [ethBalance, ...(tokens.result || tokens || [])];
     res.status(200).json(result);
   } catch (err) {
-    res.status(500).json({ error: 'Failed to fetch tokens' });
+    console.error(err);
+    res.status(500).json({ error: err.message });
   }
 }

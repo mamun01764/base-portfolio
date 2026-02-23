@@ -18,16 +18,21 @@ export default function Home() {
         fetch(`/api/transactions?address=${address}`),
         fetch(`/api/nfts?address=${address}`)
       ]);
-      const tokens = await tokenRes.json();
-      const txs = await txRes.json();
-      const nftData = await nftRes.json();
-      setPortfolio(tokens);
-      setTransactions(txs);
-      setNfts(nftData);
+      setPortfolio(await tokenRes.json());
+      setTransactions(await txRes.json());
+      setNfts(await nftRes.json());
     } catch (err) {
       alert('Error fetching data');
     }
     setLoading(false);
+  };
+
+  const formatBalance = (balance, decimals) => {
+    if (!balance) return '0';
+    const num = parseInt(balance) / Math.pow(10, decimals || 18);
+    if (num > 1000000) return (num / 1000000).toFixed(2) + 'M';
+    if (num > 1000) return (num / 1000).toFixed(2) + 'K';
+    return num.toFixed(4);
   };
 
   return (
@@ -69,9 +74,17 @@ export default function Home() {
               <div>
                 <h2 style={{ color: '#888', fontSize: '14px', marginBottom: '15px' }}>TOKEN BALANCES</h2>
                 {portfolio.map((token, i) => (
-                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '15px', background: '#111', borderRadius: '8px', marginBottom: '8px' }}>
-                    <span>{token.symbol}</span>
-                    <span style={{ color: '#0052ff' }}>{parseFloat(token.balance).toFixed(4)}</span>
+                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px', background: '#111', borderRadius: '8px', marginBottom: '8px' }}>
+                    <div>
+                      <div style={{ fontWeight: 'bold' }}>{token.symbol}</div>
+                      <div style={{ color: '#888', fontSize: '12px' }}>{token.name}</div>
+                    </div>
+                    <div style={{ color: '#0052ff', textAlign: 'right' }}>
+                      {token.symbol === 'ETH' 
+                        ? parseFloat(token.balance).toFixed(6)
+                        : formatBalance(token.balance, token.decimals)
+                      }
+                    </div>
                   </div>
                 ))}
               </div>
@@ -84,8 +97,8 @@ export default function Home() {
                   <div key={i} style={{ padding: '15px', background: '#111', borderRadius: '8px', marginBottom: '8px', fontSize: '13px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                       <span style={{ color: '#0052ff' }}>{tx.hash?.slice(0, 20)}...</span>
-                      <span style={{ color: tx.from?.toLowerCase() === address.toLowerCase() ? '#ff4444' : '#44ff88' }}>
-                        {tx.from?.toLowerCase() === address.toLowerCase() ? 'OUT' : 'IN'}
+                      <span style={{ color: tx.from_address?.toLowerCase() === address.toLowerCase() ? '#ff4444' : '#44ff88' }}>
+                        {tx.from_address?.toLowerCase() === address.toLowerCase() ? 'OUT' : 'IN'}
                       </span>
                     </div>
                     <div style={{ color: '#888', marginTop: '4px' }}>{new Date(tx.block_timestamp).toLocaleString()}</div>
@@ -99,7 +112,7 @@ export default function Home() {
                 {nfts.slice(0, 12).map((nft, i) => (
                   <div key={i} style={{ background: '#111', borderRadius: '8px', padding: '15px', textAlign: 'center' }}>
                     {nft.normalized_metadata?.image ? (
-                      <img src={nft.normalized_metadata.image} alt={nft.name} style={{ width: '100%', borderRadius: '6px', marginBottom: '8px' }} />
+                      <img src={nft.normalized_metadata.image} alt={nft.name} style={{ width: '100%', borderRadius: '6px', marginBottom: '8px' }} onError={e => e.target.style.display='none'} />
                     ) : (
                       <div style={{ height: '100px', background: '#222', borderRadius: '6px', marginBottom: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>🖼️</div>
                     )}
